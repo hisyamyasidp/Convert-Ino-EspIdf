@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ino to ESP-IDF Converter</title>
+    <title>Ino & ESP-IDF Converter</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -15,9 +15,20 @@
     
     <main class="container">
         <header>
-            <h1>Ino to ESP-IDF <span>Converter</span></h1>
-            <p>Convert your Arduino sketches to native ESP-IDF C++ projects instantly.</p>
+            <h1>Code <span>Converter</span></h1>
+            <p>Seamlessly translate between Arduino and native ESP-IDF C++ projects.</p>
         </header>
+
+        <section class="controls">
+            <div class="toggle-container">
+                <span id="label-ino2esp" class="active">Arduino ➡️ ESP-IDF</span>
+                <label class="switch">
+                    <input type="checkbox" id="mode-toggle">
+                    <span class="slider round"></span>
+                </label>
+                <span id="label-esp2ino">ESP-IDF ➡️ Arduino</span>
+            </div>
+        </section>
 
         <section class="upload-section">
             <div id="drop-zone" class="drop-zone">
@@ -26,24 +37,29 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
                 </div>
-                <h3>Drag & Drop your .ino file here</h3>
-                <p>or click to browse from your computer</p>
-                <input type="file" id="file-input" accept=".ino" hidden>
+                <h3>Drag & Drop your Project (.zip) here</h3>
+                <p>Ensure your .ino or main.cpp is inside the zip!</p>
+                <input type="file" id="file-input" accept=".zip" hidden>
             </div>
             
             <div id="file-info" class="file-info hidden">
-                <span class="file-name">filename.ino</span>
+                <span class="file-name">project.zip</span>
                 <button id="btn-remove" class="btn-remove">✖</button>
             </div>
             
-            <button id="btn-convert" class="btn-primary" disabled>Convert to ESP-IDF</button>
+            <button id="btn-convert" class="btn-primary" disabled>Convert Project</button>
         </section>
 
         <div id="loading" class="loading-overlay hidden">
             <div class="spinner"></div>
-            <p>Translating Native APIs...</p>
+            <p>Translating Project & Native APIs...</p>
         </div>
     </main>
+
+    <footer>
+        <p>&copy; 2026 hisyamyasidp. All rights reserved.</p>
+    </footer>
+
     <!-- JSZip for browser zipping -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="translator.js"></script>

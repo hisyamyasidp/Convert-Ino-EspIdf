@@ -5,8 +5,25 @@ const fileName = document.querySelector('.file-name');
 const btnRemove = document.getElementById('btn-remove');
 const btnConvert = document.getElementById('btn-convert');
 const loading = document.getElementById('loading');
+const modeToggle = document.getElementById('mode-toggle');
+const labelIno2Esp = document.getElementById('label-ino2esp');
+const labelEsp2Ino = document.getElementById('label-esp2ino');
 
 let selectedFile = null;
+let mode = 'ino2esp'; // default
+
+// Toggle logic
+modeToggle.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        mode = 'esp2ino';
+        labelIno2Esp.classList.remove('active');
+        labelEsp2Ino.classList.add('active');
+    } else {
+        mode = 'ino2esp';
+        labelIno2Esp.classList.add('active');
+        labelEsp2Ino.classList.remove('active');
+    }
+});
 
 // Handle Drag & Drop
 ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -42,8 +59,8 @@ fileInput.addEventListener('change', function() {
 function handleFiles(files) {
     if (files.length > 0) {
         const file = files[0];
-        if (!file.name.endsWith('.ino')) {
-            alert('Please upload an .ino file!');
+        if (!file.name.endsWith('.zip')) {
+            alert('Please upload a .zip file containing your project!');
             return;
         }
         selectedFile = file;
@@ -71,50 +88,86 @@ btnConvert.addEventListener('click', async () => {
     loading.classList.remove('hidden');
 
     try {
-        const reader = new FileReader();
-        reader.onload = async function(e) {
-            try {
-                const inoContent = e.target.result;
-                const projectName = selectedFile.name.replace('.ino', '');
-                
-                // Call translator function from translator.js
-                // Note: convert is a global function now because module.exports was removed
-                const result = convert(inoContent, projectName);
-                
-                // Initialize JSZip
-                const zip = new JSZip();
-                
-                // Add files to zip
-                zip.file("CMakeLists.txt", result.rootCMakeList);
-                
-                const mainFolder = zip.folder("main");
-                mainFolder.file("CMakeLists.txt", result.cmakeList);
-                mainFolder.file("main.cpp", result.mainC);
-                
-                // Generate ZIP
-                const content = await zip.generateAsync({type:"blob"});
-                
-                // Download
-                const url = window.URL.createObjectURL(content);
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = `${projectName}_espidf.zip`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                
-            } catch (err) {
-                alert('Conversion Error: ' + err.message);
-            } finally {
-                loading.classList.add('hidden');
-            }
-        };
+        const zipData = await selectedFile.arrayBuffer();
+        const inputZip = await JSZip.loadAsync(zipData);
+        const outputZip = new JSZip();
         
-        reader.readAsText(selectedFile);
+        const projectName = selectedFile.name.replace('.zip', '');
+
+        if (mode === 'ino2esp') {
+            // Arduino -> ESP-IDF
+            let foundIno = false;
+            let result = null;
+
+            // Process files
+            for (let [filename, fileData] of Object.entries(inputZip.files)) {
+                if (fileData.dir) continue;
+                
+                const content = await fileData.async("string");
+                const baseName = filename.split('/').pop();
+                
+                if (baseName.endsWith('.ino')) {
+                    foundIno = true;
+                    result = convertToEspIdf(content, projectName);
+                } else if (baseName.endsWith('.h') || baseName.endsWith('.cpp') || baseName.endsWith('.c')) {
+                    // Copy other source files to main folder
+                    outputZip.folder("main").file(baseName, content);
+                }
+            }
+
+            if (!foundIno || !result) {
+                throw new Error("No .ino file found in the zip!");
+            }
+
+            outputZip.file("CMakeLists.txt", result.rootCMakeList);
+            outputZip.folder("main").file("CMakeLists.txt", result.cmakeList);
+            outputZip.folder("main").file("main.cpp", result.mainC);
+
+        } else {
+            // ESP-IDF -> Arduino
+            let foundMain = false;
+            let inoCode = "";
+            
+            const arduinoFolder = outputZip.folder(projectName);
+
+            for (let [filename, fileData] of Object.entries(inputZip.files)) {
+                if (fileData.dir) continue;
+                
+                const content = await fileData.async("string");
+                const baseName = filename.split('/').pop();
+                
+                if (baseName === 'main.cpp' || baseName === 'main.c') {
+                    foundMain = true;
+                    inoCode = convertToArduino(content);
+                    arduinoFolder.file(`${projectName}.ino`, inoCode);
+                } else if ((baseName.endsWith('.h') || baseName.endsWith('.cpp') || baseName.endsWith('.c')) && baseName !== 'CMakeLists.txt') {
+                    // Copy other source files
+                    arduinoFolder.file(baseName, content);
+                }
+            }
+
+            if (!foundMain) {
+                throw new Error("No main.cpp or main.c found in the ESP-IDF zip!");
+            }
+        }
+
+        // Generate ZIP
+        const contentBlob = await outputZip.generateAsync({type:"blob"});
+        
+        // Download
+        const url = window.URL.createObjectURL(contentBlob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        const outName = mode === 'ino2esp' ? `${projectName}_espidf.zip` : `${projectName}_arduino.zip`;
+        a.download = outName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
         
     } catch (error) {
         alert('Error: ' + error.message);
+    } finally {
         loading.classList.add('hidden');
     }
 });

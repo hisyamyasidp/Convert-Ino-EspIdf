@@ -1,4 +1,4 @@
-function convert(inoContent, projectName) {
+function convertToEspIdf(inoContent, projectName) {
     let rootCMakeList = `cmake_minimum_required(VERSION 3.16)\ninclude($ENV{IDF_PATH}/tools/cmake/project.cmake)\nproject(${projectName})\n`;
     
     let requires = [];
@@ -52,11 +52,8 @@ void wifi_init_sta(void) {
         inoContent = inoContent.replace(/WiFi\.begin\((.*?),\s*(.*?)\);/g, (match, ssid, pass) => {
             return `
     wifi_config_t wifi_config = {};
-    // Temporary cast to avoid C++ string literal warning in C++ compilation, 
-    // but works best if user provided char* variables.
     strncpy((char*)wifi_config.sta.ssid, ${ssid}, sizeof(wifi_config.sta.ssid));
     strncpy((char*)wifi_config.sta.password, ${pass}, sizeof(wifi_config.sta.password));
-    
     esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
 `;
         });
@@ -94,7 +91,6 @@ void wifi_init_sta(void) {
     
     // Replace Serial
     convertedCode = convertedCode.replace(/Serial\.begin\((.*?)\);/g, '// Serial.begin ignored');
-    // Using simple regex for string replacing, this will only work properly for simple strings
     convertedCode = convertedCode.replace(/Serial\.println\((.*?)\);/g, 'printf("%s\\n", (const char*)$1);'); 
     convertedCode = convertedCode.replace(/Serial\.print\((.*?)\);/g, 'printf("%s", (const char*)$1);');
 
@@ -121,4 +117,59 @@ void wifi_init_sta(void) {
     }
 
     return { mainC, cmakeList, rootCMakeList };
+}
+
+function convertToArduino(espContent) {
+    let inoCode = espContent;
+
+    // Remove IDF includes
+    const idfIncludes = [
+        '#include <stdio.h>', '#include <string.h>', '#include "freertos/FreeRTOS.h"',
+        '#include "freertos/task.h"', '#include "driver/gpio.h"', '#include "esp_wifi.h"',
+        '#include "nvs_flash.h"', '#include "esp_event.h"', '#include "esp_netif.h"',
+        '#include "lwip/err.h"', '#include "lwip/sys.h"'
+    ];
+    idfIncludes.forEach(inc => {
+        inoCode = inoCode.replace(new RegExp(inc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\r?\\n', 'g'), '');
+    });
+
+    // Handle WiFi Reverse
+    if (inoCode.includes('wifi_init_sta')) {
+        inoCode = '#include <WiFi.h>\n' + inoCode;
+        // Remove wifi event handler and init sta
+        inoCode = inoCode.replace(/\/\/ WiFi Event Handler[\s\S]*?void wifi_init_sta\(void\) \{[\s\S]*?esp_wifi_start\(\);\n\}/m, '');
+        // Extract ssid and pass
+        const wifiMatch = inoCode.match(/strncpy\(\(char\*\)wifi_config\.sta\.ssid,\s*(.*?),\s*sizeof/);
+        const passMatch = inoCode.match(/strncpy\(\(char\*\)wifi_config\.sta\.password,\s*(.*?),\s*sizeof/);
+        if (wifiMatch && passMatch) {
+            const ssid = wifiMatch[1];
+            const pass = passMatch[1];
+            // Replace the whole wifi block with WiFi.begin
+            inoCode = inoCode.replace(/wifi_config_t wifi_config = \{\};[\s\S]*?esp_wifi_set_config\(WIFI_IF_STA, &wifi_config\);/m, `WiFi.begin(${ssid}, ${pass});`);
+        }
+    }
+
+    // Remove app_main completely (since it just calls setup and loop usually)
+    inoCode = inoCode.replace(/extern "C" void app_main\(void\) \{[\s\S]*?\}\n$/m, '');
+    
+    // Reverse Core API
+    inoCode = inoCode.replace(/gpio_set_direction\(\(gpio_num_t\)(.*?), GPIO_MODE_OUTPUT\);/g, 'pinMode($1, OUTPUT);');
+    inoCode = inoCode.replace(/gpio_set_direction\(\(gpio_num_t\)(.*?), GPIO_MODE_INPUT\); gpio_set_pull_mode\(\(gpio_num_t\).*?, GPIO_PULLUP_ONLY\);/g, 'pinMode($1, INPUT_PULLUP);');
+    inoCode = inoCode.replace(/gpio_set_direction\(\(gpio_num_t\)(.*?), GPIO_MODE_INPUT\);/g, 'pinMode($1, INPUT);');
+    
+    inoCode = inoCode.replace(/gpio_set_level\(\(gpio_num_t\)(.*?), 1\);/g, 'digitalWrite($1, HIGH);');
+    inoCode = inoCode.replace(/gpio_set_level\(\(gpio_num_t\)(.*?), 0\);/g, 'digitalWrite($1, LOW);');
+    
+    inoCode = inoCode.replace(/gpio_get_level\(\(gpio_num_t\)(.*?)\)/g, 'digitalRead($1)');
+    
+    inoCode = inoCode.replace(/vTaskDelay\((.*?) \/ portTICK_PERIOD_MS\);/g, 'delay($1);');
+    
+    inoCode = inoCode.replace(/\/\/ Serial\.begin ignored/g, 'Serial.begin(115200);');
+    inoCode = inoCode.replace(/printf\("%s\\n", \(const char\*\)(.*?)\);/g, 'Serial.println($1);');
+    inoCode = inoCode.replace(/printf\("%s", \(const char\*\)(.*?)\);/g, 'Serial.print($1);');
+
+    // Clean up multiple empty lines
+    inoCode = inoCode.replace(/\n\s*\n\s*\n/g, '\n\n').trim();
+
+    return inoCode;
 }

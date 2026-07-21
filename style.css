@@ -20,9 +20,9 @@ body {
     color: var(--text-main);
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
     position: relative;
 }
 
@@ -78,6 +78,7 @@ body {
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     text-align: center;
     position: relative;
+    z-index: 1;
 }
 
 header h1 {
@@ -95,6 +96,70 @@ header h1 span {
 header p {
     color: var(--text-muted);
     margin-bottom: 32px;
+}
+
+/* Controls - Toggle Switch */
+.controls {
+    margin-bottom: 24px;
+}
+
+.toggle-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    font-weight: 600;
+}
+
+.toggle-container span {
+    color: var(--text-muted);
+    transition: color 0.3s;
+}
+
+.toggle-container span.active {
+    color: var(--primary);
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--primary);
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--accent);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
 }
 
 /* Upload Section */
@@ -220,4 +285,15 @@ header p {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Footer */
+footer {
+    position: absolute;
+    bottom: 20px;
+    width: 100%;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    z-index: 1;
 }
