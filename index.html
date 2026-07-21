@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ino to ESP-IDF Converter</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+    
+    <main class="container">
+        <header>
+            <h1>Ino to ESP-IDF <span>Converter</span></h1>
+            <p>Convert your Arduino sketches to native ESP-IDF C++ projects instantly.</p>
+        </header>
+
+        <section class="upload-section">
+            <div id="drop-zone" class="drop-zone">
+                <div class="icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                </div>
+                <h3>Drag & Drop your .ino file here</h3>
+                <p>or click to browse from your computer</p>
+                <input type="file" id="file-input" accept=".ino" hidden>
+            </div>
+            
+            <div id="file-info" class="file-info hidden">
+                <span class="file-name">filename.ino</span>
+                <button id="btn-remove" class="btn-remove">✖</button>
+            </div>
+            
+            <button id="btn-convert" class="btn-primary" disabled>Convert to ESP-IDF</button>
+        </section>
+
+        <div id="loading" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p>Translating Native APIs...</p>
+        </div>
+    </main>
+    <!-- JSZip for browser zipping -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="translator.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
