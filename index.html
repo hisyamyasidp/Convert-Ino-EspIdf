@@ -13,7 +13,7 @@
         <div class="blob blob-2"></div>
     </div>
     
-    <main class="container">
+    <main class="page-wrapper">
         <header>
             <h1>Code <span>Converter</span></h1>
             <p>Seamlessly translate between Arduino and native ESP-IDF C++ projects.</p>
@@ -21,34 +21,71 @@
 
         <section class="controls">
             <div class="toggle-container">
-                <span id="label-ino2esp" class="active">Arduino ➡️ ESP-IDF</span>
+                <span id="label-ino2esp" class="active blue-text">Arduino ➡️ ESP-IDF</span>
                 <label class="switch">
                     <input type="checkbox" id="mode-toggle">
                     <span class="slider round"></span>
                 </label>
-                <span id="label-esp2ino">ESP-IDF ➡️ Arduino</span>
+                <span id="label-esp2ino" class="pink-text">ESP-IDF ➡️ Arduino</span>
             </div>
         </section>
 
-        <section class="upload-section">
-            <div id="drop-zone" class="drop-zone">
-                <div class="icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
+        <!-- 3D Scene Wrapper -->
+        <div class="scene">
+            <div class="card" id="main-card">
+                
+                <!-- FRONT FACE: Blue Theme (Arduino -> ESP-IDF) -->
+                <div class="card-face card-front">
+                    <div class="container blue-theme">
+                        <section class="upload-section">
+                            <div id="drop-zone-front" class="drop-zone">
+                                <div class="icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                    </svg>
+                                </div>
+                                <h3>Drag & Drop Arduino Project (.zip)</h3>
+                                <p>Ensure your .ino is inside the zip!</p>
+                                <input type="file" id="file-input-front" accept=".zip" hidden>
+                            </div>
+                            
+                            <div id="file-info-front" class="file-info hidden">
+                                <span class="file-name" id="file-name-front">project.zip</span>
+                                <button id="btn-remove-front" class="btn-remove">✖</button>
+                            </div>
+                            
+                            <button id="btn-convert-front" class="btn-primary" disabled>Convert to ESP-IDF</button>
+                        </section>
+                    </div>
                 </div>
-                <h3>Drag & Drop your Project (.zip) here</h3>
-                <p>Ensure your .ino or main.cpp is inside the zip!</p>
-                <input type="file" id="file-input" accept=".zip" hidden>
+
+                <!-- BACK FACE: Pink Theme (ESP-IDF -> Arduino) -->
+                <div class="card-face card-back">
+                    <div class="container pink-theme">
+                        <section class="upload-section">
+                            <div id="drop-zone-back" class="drop-zone">
+                                <div class="icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                    </svg>
+                                </div>
+                                <h3>Drag & Drop ESP-IDF Project (.zip)</h3>
+                                <p>Ensure main.c or main.cpp is inside the zip!</p>
+                                <input type="file" id="file-input-back" accept=".zip" hidden>
+                            </div>
+                            
+                            <div id="file-info-back" class="file-info hidden">
+                                <span class="file-name" id="file-name-back">project.zip</span>
+                                <button id="btn-remove-back" class="btn-remove">✖</button>
+                            </div>
+                            
+                            <button id="btn-convert-back" class="btn-primary" disabled>Convert to Arduino</button>
+                        </section>
+                    </div>
+                </div>
+
             </div>
-            
-            <div id="file-info" class="file-info hidden">
-                <span class="file-name">project.zip</span>
-                <button id="btn-remove" class="btn-remove">✖</button>
-            </div>
-            
-            <button id="btn-convert" class="btn-primary" disabled>Convert Project</button>
-        </section>
+        </div>
 
         <div id="loading" class="loading-overlay hidden">
             <div class="spinner"></div>
